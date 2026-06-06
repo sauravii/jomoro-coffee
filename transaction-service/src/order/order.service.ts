@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductClientService } from '../common/product-client.service';
 
@@ -12,34 +9,58 @@ export class OrderService {
     private productClient: ProductClientService,
   ) {}
 
-  async checkout(userId: number) {
+  async checkout(userId: number, authHeader: string) {
+    // 1. Retrieve the user's cart
     const cart = await this.prisma.cart.findUnique({
       where: { user_id: userId },
       include: { items: true },
     });
 
     if (!cart || cart.items.length === 0) {
-      throw new BadRequestException('Cart is empty');
+      throw new BadRequestException('Cannot checkout an empty cart.');
     }
 
+    let totalAmount = 0;
+    // FIXED: Explicitly defined the array type so TypeScript doesn't treat it as 'never[]'
+    const orderItemsData: { product_id: number; quantity: number; price: number }[] = [];
+
+    // 2. Validate stock and calculate the total amount securely
+    for (const item of cart.items) {
+      const product = await this.productClient.getProduct(item.product_id);
+      
+      if (product.stock < item.quantity) {
+        throw new BadRequestException(`Insufficient stock for ${product.name}. Only ${product.stock} left.`);
+      }
+
+      totalAmount += product.price * item.quantity;
+      
+      // Snapshot the price so the order history remains accurate
+      orderItemsData.push({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: product.price, 
+      });
+    }
+
+    // 3. Process the Order and clear the cart in an atomic transaction
     const order = await this.prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
-        data: { user_id: userId },
+        data: {
+          user_id: userId,
+          total_amount: totalAmount,
+          status: 'PAID',
+        },
       });
 
-      for (const item of cart.items) {
-        const product = await this.productClient.getProductById(item.product_id);
-
-        await tx.orderDetail.create({
+      for (const item of orderItemsData) {
+        await tx.orderItem.create({
           data: {
             order_id: newOrder.id,
             product_id: item.product_id,
-            price: product?.price ?? 0,
             quantity: item.quantity,
+            price: item.price,
           },
         });
-
-        await this.productClient.reduceStock(item.product_id, item.quantity);
       }
 
       await tx.cartItem.deleteMany({
@@ -49,44 +70,38 @@ export class OrderService {
       return newOrder;
     });
 
-    return { message: 'Checkout successful', order_id: order.id };
+    // 4. Reduce the stock in the Product Service
+    for (const item of orderItemsData) {
+      await this.productClient.reduceProductStock(item.product_id, item.quantity, authHeader);
+    }
+
+    return order;
   }
 
-  async getOrders(userId: number) {
+  async getOrderHistory(userId: number) {
     const orders = await this.prisma.order.findMany({
       where: { user_id: userId },
+      include: { items: true },
       orderBy: { created_at: 'desc' },
     });
 
-    return orders;
-  }
-
-  async getOrderDetail(userId: number, orderId: number) {
-    const order = await this.prisma.order.findFirst({
-      where: { id: orderId, user_id: userId },
-      include: { details: true },
-    });
-
-    if (!order) {
-      throw new BadRequestException('Order not found');
-    }
-
-    const detailsWithProduct = await Promise.all(
-      order.details.map(async (detail) => {
-        const product = await this.productClient.getProductById(detail.product_id);
-        return {
-          product_id: detail.product_id,
-          name: product?.name ?? 'Unknown',
-          quantity: detail.quantity,
-          price: detail.price,
-        };
-      }),
+    // Attach live product details to the order history response
+    const ordersWithProducts = await Promise.all(
+      orders.map(async (order) => {
+        const itemsWithProducts = await Promise.all(
+          order.items.map(async (item) => {
+            try {
+              const product = await this.productClient.getProduct(item.product_id);
+              return { ...item, product };
+            } catch (error) {
+              return { ...item, product: null, error: 'Product unavailable' };
+            }
+          })
+        );
+        return { ...order, items: itemsWithProducts };
+      })
     );
 
-    return {
-      order_id: order.id,
-      created_at: order.created_at,
-      items: detailsWithProduct,
-    };
+    return ordersWithProducts;
   }
 }

@@ -1,28 +1,45 @@
-import { Injectable } from '@nestjs/common';
-
-export interface ProductDetail {
-  id: number;
-  name: string;
-  price: number;
-  stock: number;
-}
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ProductClientService {
-  private readonly baseUrl = process.env.PRODUCT_SERVICE_URL;
+  private productServiceUrl: string;
 
-  async getProductById(id: number): Promise<ProductDetail | null> {
-    // MOCK — ganti ke real fetch setelah product-service siap
-    return {
-      id,
-      name: `Mock Product ${id}`,
-      price: 50000,
-      stock: 10,
-    };
+  constructor(
+    private httpService: HttpService,
+    private configService: ConfigService,
+  ) {
+    this.productServiceUrl = this.configService.get<string>('PRODUCT_SERVICE_URL') || 'http://localhost:3002';
   }
 
-  async reduceStock(id: number, quantity: number): Promise<void> {
-    // MOCK — ganti ke real fetch setelah product-service siap
-    console.log(`Mock: reduce stock product ${id} by ${quantity}`);
+  async getProduct(productId: number) {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.productServiceUrl}/products/${productId}`)
+      );
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        throw new NotFoundException(`Product with ID ${productId} not found in catalog.`);
+      }
+      throw new BadRequestException('Failed to communicate with Product Service.');
+    }
+  }
+
+  async reduceProductStock(productId: number, quantity: number, authHeader: string) {
+    try {
+      // We pass the JWT token forward so the Product Service knows an Admin or System is calling
+      await firstValueFrom(
+        this.httpService.post(
+          `${this.productServiceUrl}/admin/products/${productId}/reduce`,
+          { quantity },
+          { headers: { Authorization: authHeader } }
+        )
+      );
+    } catch (error) {
+      throw new BadRequestException(`Failed to reduce stock for Product ID ${productId}. It may be out of stock.`);
+    }
   }
 }

@@ -1,41 +1,23 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Param,
-  UseGuards,
-  Request,
-  ParseIntPipe,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Post, Get, UseGuards, Request, Headers } from '@nestjs/common';
 import { OrderService } from './order.service';
-import { JwtAuthGuard } from '../common/guards/jwt.auth.guard';
+import { AuthGuard } from '@nestjs/passport';
 
-@ApiTags('Orders')
 @Controller('orders')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Checkout - create order from cart' })
-  checkout(@Request() req) {
-    return this.orderService.checkout(req.user.id);
+  @Post('checkout')
+  checkout(
+    @Request() req, 
+    @Headers('authorization') authHeader: string
+  ) {
+    // Forward the authorization header so the Product Service accepts the stock reduction
+    return this.orderService.checkout(req.user.id, authHeader);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all orders for current user' })
   getOrders(@Request() req) {
-    return this.orderService.getOrders(req.user.id);
-  }
-
-  @Post(':id')
-  @ApiOperation({ summary: 'Get order detail by ID' })
-  getOrderDetail(
-    @Request() req,
-    @Param('id', ParseIntPipe) orderId: number,
-  ) {
-    return this.orderService.getOrderDetail(req.user.id, orderId);
+    return this.orderService.getOrderHistory(req.user.id);
   }
 }

@@ -7,39 +7,41 @@ datasource db {
 }
 
 model Cart {
-  id       Int        @id @default(autoincrement())
-  user_id  Int        @unique
-  items    CartItem[]
+  id         Int        @id @default(autoincrement())
+  user_id    Int        @unique 
+  items      CartItem[]
 
   @@map("carts")
 }
 
 model CartItem {
-  id         Int  @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   cart_id    Int
-  product_id Int
+  product_id Int      // Maps to the ID in product-service
   quantity   Int
-  cart       Cart @relation(fields: [cart_id], references: [id])
+  cart       Cart     @relation(fields: [cart_id], references: [id], onDelete: Cascade)
 
   @@map("cart_items")
 }
 
 model Order {
-  id         Int           @id @default(autoincrement())
-  user_id    Int
-  created_at DateTime      @default(now())
-  details    OrderDetail[]
+  id           Int         @id @default(autoincrement())
+  user_id      Int
+  total_amount Float
+  status       String      @default("PAID")
+  created_at   DateTime    @default(now())
+  items        OrderItem[]
 
   @@map("orders")
 }
 
-model OrderDetail {
-  id         Int    @id @default(autoincrement())
+model OrderItem {
+  id         Int      @id @default(autoincrement())
   order_id   Int
   product_id Int
-  price      Float
   quantity   Int
-  order      Order  @relation(fields: [order_id], references: [id])
+  price      Float    // Snapshot of the price at the time of purchase
+  order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
 
-  @@map("order_details")
+  @@map("order_items")
 }
