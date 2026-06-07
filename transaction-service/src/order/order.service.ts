@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProductClientService } from '../common/product-client.service';
 
@@ -103,5 +103,29 @@ export class OrderService {
     );
 
     return ordersWithProducts;
+  }
+
+  async getOrderDetail(userId: number, orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+
+    if (!order || order.user_id !== userId) {
+      throw new NotFoundException(`Order with ID ${orderId} not found.`);
+    }
+
+    const itemsWithProducts = await Promise.all(
+      order.items.map(async (item) => {
+        try {
+          const product = await this.productClient.getProduct(item.product_id);
+          return { ...item, product };
+        } catch (error) {
+          return { ...item, product: null, error: 'Product unavailable' };
+        }
+      })
+    );
+
+    return { ...order, items: itemsWithProducts };
   }
 }

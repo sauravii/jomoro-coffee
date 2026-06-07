@@ -6,6 +6,7 @@ import { CommonModule } from './common/common.module';
 import { CartModule } from './cart/cart.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { OrderModule } from './order/order.module';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { OrderModule } from './order/order.module';
     CommonModule, 
     CartModule, 
     PrismaModule, 
-    OrderModule
+    OrderModule,
+    ProfileModule
   ],
   controllers: [AppController],
   providers: [AppService],

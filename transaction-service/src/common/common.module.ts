@@ -6,6 +6,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { ProductClientService } from './product-client.service';
 import { JwtAuthGuard } from './guards/jwt.auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { AuthClientService } from './auth-client.service';
 
 @Module({
   imports: [
@@ -16,7 +17,7 @@ import { RolesGuard } from './guards/roles.guard';
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [JwtStrategy, ProductClientService, JwtAuthGuard, RolesGuard],
-  exports: [PassportModule, JwtModule, JwtStrategy, ProductClientService, HttpModule, JwtAuthGuard, RolesGuard], // Exporting makes them available globally
+  providers: [JwtStrategy, ProductClientService, JwtAuthGuard, RolesGuard, AuthClientService],
+  exports: [PassportModule, JwtModule, JwtStrategy, ProductClientService, HttpModule, JwtAuthGuard, RolesGuard, AuthClientService], // Exporting makes them available globally
 })
 export class CommonModule {}
