@@ -2,10 +2,10 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, UseGua
 import { CartService } from './cart.service';
 import { AddCartDto } from './dto/add-cart.dto';
 import { UpdateCartDto } from './dto/update-cart.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from '../common/guards/jwt.auth.guard';
 
 @Controller('cart')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
