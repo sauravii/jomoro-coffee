@@ -14,7 +14,12 @@ export class AdminService {
     if (!category) {
       throw new BadRequestException('Category not found');
     }
-    return this.prisma.product.create({ data: dto });
+    const product = await this.prisma.product.create({ data: dto });
+    return {
+      status: 201,
+      message: 'Product created successfully',
+      data: product,
+    };
   }
 
   async updateProduct(id: number, dto: CreateProductDto) {
@@ -24,7 +29,12 @@ export class AdminService {
     if (!category) {
       throw new BadRequestException('Category not found');
     }
-    return this.prisma.product.update({ where: { id }, data: dto });
+    const product = await this.prisma.product.update({ where: { id }, data: dto });
+    return {
+      status: 200,
+      message: 'Product updated successfully',
+      data: product,
+    };
   }
 
   async reduceStock(id: number, dto: ReduceStockDto) {
@@ -32,13 +42,23 @@ export class AdminService {
     if (!product || dto.quantity > product.stock) {
       throw new BadRequestException('Quantity exceeds available stock or product not found.');
     }
-    return this.prisma.product.update({ 
+    const updatedProduct = await this.prisma.product.update({ 
       where: { id }, 
       data: { stock: product.stock - dto.quantity } 
     });
+    return {
+      status: 200,
+      message: 'Product stock reduced successfully',
+      data: updatedProduct,
+    };
   }
 
-  deleteProduct(id: number) {
-    return this.prisma.product.delete({ where: { id } });
+  async deleteProduct(id: number) {
+    const product = await this.prisma.product.delete({ where: { id } });
+    return {
+      status: 200,
+      message: 'Product deleted successfully',
+      data: product,
+    };
   }
 }

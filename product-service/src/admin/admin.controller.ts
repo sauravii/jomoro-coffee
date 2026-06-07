@@ -7,35 +7,34 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
-@ApiTags('Admin Product Management') 
+@ApiTags('Admin only (Bearer Token + role ADMIN)') 
 @ApiBearerAuth()                     
 @Controller('admin/products')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-  // Correctly inject the AdminService here
   constructor(private adminService: AdminService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new coffee or pastry item' })
+  @ApiOperation({ summary: '— create new product' })
   create(@Body() dto: CreateProductDto) {
     return this.adminService.createProduct(dto);
   }
 
   @Post(':id/update')
-  @ApiOperation({ summary: 'Update an existing product' })
+  @ApiOperation({ summary: '— update existing product' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateProductDto) {
     return this.adminService.updateProduct(id, dto);
   }
 
   @Post(':id/reduce')
-  @ApiOperation({ summary: 'Reduce product stock after a purchase' })
+  @ApiOperation({ summary: '— reduce stock' })
   reduce(@Param('id', ParseIntPipe) id: number, @Body() dto: ReduceStockDto) {
     return this.adminService.reduceStock(id, dto);
   }
 
   @Post(':id/delete')
-  @ApiOperation({ summary: 'Delete a product from the catalog' })
+  @ApiOperation({ summary: '— delete product' })
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.deleteProduct(id);
   }

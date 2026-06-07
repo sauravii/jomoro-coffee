@@ -9,21 +9,17 @@ async function bootstrap() {
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
-  // --- Swagger Configuration ---
   const config = new DocumentBuilder()
-    .setTitle('Jomoro Coffee - Product API')
-    .setDescription('Microservice handling categories, products, and inventory.')
+    .setTitle('Product Service')
+    .setDescription('Jomoro Coffee - Product Service')
     .setVersion('1.0')
-    .addBearerAuth() // Adds the lock icon to protected routes
+    .addBearerAuth() 
     .build();
     
   const document = SwaggerModule.createDocument(app, config);
-  // This exposes the UI at http://localhost:3002/api/docs
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api', app, document);
 
   const port = process.env.PORT || 3002;
   await app.listen(port);
-  console.log(`Product Service running on: http://localhost:${port}`);
-  console.log(`Swagger UI ready at: http://localhost:${port}/api/docs`);
-}
+  console.log(`Product Service running on: http://localhost:${port}`);}
 bootstrap();

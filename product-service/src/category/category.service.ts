@@ -5,7 +5,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class CategoryService {
   constructor(private prisma: PrismaService) {}
 
-  getAllCategories() {
-    return this.prisma.category.findMany();
+  async getAllCategories() {
+    const categories = await this.prisma.category.findMany();
+    return {
+      status: 200,
+      message: 'Categories fetched successfully',
+      data: categories,
+    };
   }
 }
