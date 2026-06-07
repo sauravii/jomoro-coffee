@@ -6,7 +6,7 @@ export class ProfileService {
   constructor(private prisma: PrismaService) {}
 
   async getProfile(userId: number) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
         first_name: true,
@@ -15,5 +15,11 @@ export class ProfileService {
         role: true,
       },
     });
+
+    return { 
+      status: 200, 
+      message: "User profile fetched successfully",
+      data: user 
+    };
   }
 }

@@ -7,11 +7,23 @@ import { ReduceStockDto } from './dto/reduce-stock.dto';
 export class AdminService {
   constructor(private prisma: PrismaService) {}
 
-  createProduct(dto: CreateProductDto) {
+  async createProduct(dto: CreateProductDto) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.category_id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
     return this.prisma.product.create({ data: dto });
   }
 
-  updateProduct(id: number, dto: CreateProductDto) {
+  async updateProduct(id: number, dto: CreateProductDto) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.category_id },
+    });
+    if (!category) {
+      throw new BadRequestException('Category not found');
+    }
     return this.prisma.product.update({ where: { id }, data: dto });
   }
 

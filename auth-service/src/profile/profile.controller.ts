@@ -11,7 +11,6 @@ export class ProfileController {
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get authenticated user profile' })
   getProfile(@Request() req) {
     return this.profileService.getProfile(req.user.id);
   }

@@ -34,17 +34,10 @@ $ npm install
 ## Compile and run the project
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+   npm install
 ```
 
-## Run tests
+3. Generate Prisma client:
 
 ```bash
 # unit tests

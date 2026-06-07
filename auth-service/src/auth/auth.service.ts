@@ -7,12 +7,12 @@ import { LoginDto } from './dto/login.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private _prisma: PrismaService,
+    private _jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
-    const existingUser = await this.prisma.user.findUnique({
+    const existingUser = await this._prisma.user.findUnique({
       where: { email: dto.email },
     });
 
@@ -20,7 +20,7 @@ export class AuthService {
       throw new BadRequestException('Email is already registered');
     }
 
-    await this.prisma.user.create({
+    const user = await this._prisma.user.create({
       data: {
         first_name: dto.first_name,
         last_name: dto.last_name,
@@ -30,11 +30,21 @@ export class AuthService {
       },
     });
 
-    return { message: 'User registered successfully' };
+    return { 
+      status: 200,
+      message: 'User registered successfully',
+      data: {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        role: user.role,
+      }
+    };
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this._prisma.user.findUnique({
       where: { email: dto.email },
     });
 
@@ -47,8 +57,11 @@ export class AuthService {
     }
 
     const payload = { id: user.id, role: user.role };
-    const token = this.jwtService.sign(payload);
+    const token = this._jwtService.sign(payload);
 
-    return { access_token: token };
+    return { 
+      status: 200, 
+      message: "User login successfully",
+      access_token: token };
   }
 }
