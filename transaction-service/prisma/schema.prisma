@@ -27,8 +27,6 @@ model CartItem {
 model Order {
   id           Int         @id @default(autoincrement())
   user_id      Int
-  total_amount Float
-  status       String      @default("PAID")
   created_at   DateTime    @default(now())
   items        OrderItem[]
 
@@ -43,5 +41,5 @@ model OrderItem {
   price      Float    // Snapshot of the price at the time of purchase
   order      Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
 
-  @@map("order_items")
+  @@map("order_details")
 }

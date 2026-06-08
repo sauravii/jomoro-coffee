@@ -19,7 +19,7 @@ export class ProductClientService {
       const response = await firstValueFrom(
         this.httpService.get(`${this.productServiceUrl}/products/${productId}`)
       );
-      return response.data;
+      return response.data.data; 
     } catch (error) {
       if (error.response?.status === 404) {
         throw new NotFoundException(`Product with ID ${productId} not found in catalog.`);
@@ -30,7 +30,6 @@ export class ProductClientService {
 
   async reduceProductStock(productId: number, quantity: number, authHeader: string) {
     try {
-      // We pass the JWT token forward so the Product Service knows an Admin or System is calling
       await firstValueFrom(
         this.httpService.post(
           `${this.productServiceUrl}/admin/products/${productId}/reduce`,

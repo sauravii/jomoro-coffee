@@ -10,7 +10,6 @@ export class OrderService {
   ) {}
 
   async checkout(userId: number, authHeader: string) {
-    // 1. Retrieve the user's cart
     const cart = await this.prisma.cart.findUnique({
       where: { user_id: userId },
       include: { items: true },
@@ -20,35 +19,28 @@ export class OrderService {
       throw new BadRequestException('Cannot checkout an empty cart.');
     }
 
-    let totalAmount = 0;
-    // FIXED: Explicitly defined the array type so TypeScript doesn't treat it as 'never[]'
     const orderItemsData: { product_id: number; quantity: number; price: number }[] = [];
 
-    // 2. Validate stock and calculate the total amount securely
     for (const item of cart.items) {
       const product = await this.productClient.getProduct(item.product_id);
-      
+
       if (product.stock < item.quantity) {
-        throw new BadRequestException(`Insufficient stock for ${product.name}. Only ${product.stock} left.`);
+        throw new BadRequestException(
+          `Insufficient stock for ${product.name}. Only ${product.stock} left.`,
+        );
       }
 
-      totalAmount += product.price * item.quantity;
-      
-      // Snapshot the price so the order history remains accurate
       orderItemsData.push({
         product_id: item.product_id,
         quantity: item.quantity,
-        price: product.price, 
+        price: product.price,
       });
     }
 
-    // 3. Process the Order and clear the cart in an atomic transaction
     const order = await this.prisma.$transaction(async (tx) => {
       const newOrder = await tx.order.create({
         data: {
           user_id: userId,
-          total_amount: totalAmount,
-          status: 'PAID',
         },
       });
 
@@ -70,7 +62,6 @@ export class OrderService {
       return newOrder;
     });
 
-    // 4. Reduce the stock in the Product Service
     for (const item of orderItemsData) {
       await this.productClient.reduceProductStock(item.product_id, item.quantity, authHeader);
     }
@@ -85,7 +76,6 @@ export class OrderService {
       orderBy: { created_at: 'desc' },
     });
 
-    // Attach live product details to the order history response
     const ordersWithProducts = await Promise.all(
       orders.map(async (order) => {
         const itemsWithProducts = await Promise.all(
@@ -93,13 +83,13 @@ export class OrderService {
             try {
               const product = await this.productClient.getProduct(item.product_id);
               return { ...item, product };
-            } catch (error) {
+            } catch {
               return { ...item, product: null, error: 'Product unavailable' };
             }
-          })
+          }),
         );
         return { ...order, items: itemsWithProducts };
-      })
+      }),
     );
 
     return ordersWithProducts;
@@ -120,10 +110,10 @@ export class OrderService {
         try {
           const product = await this.productClient.getProduct(item.product_id);
           return { ...item, product };
-        } catch (error) {
+        } catch {
           return { ...item, product: null, error: 'Product unavailable' };
         }
-      })
+      }),
     );
 
     return { ...order, items: itemsWithProducts };

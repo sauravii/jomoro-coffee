@@ -27,12 +27,6 @@ export class AdminController {
     return this.adminService.updateProduct(id, dto);
   }
 
-  @Post(':id/reduce')
-  @ApiOperation({ summary: '— reduce stock' })
-  reduce(@Param('id', ParseIntPipe) id: number, @Body() dto: ReduceStockDto) {
-    return this.adminService.reduceStock(id, dto);
-  }
-
   @Post(':id/delete')
   @ApiOperation({ summary: '— delete product' })
   delete(@Param('id', ParseIntPipe) id: number) {

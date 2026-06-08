@@ -12,6 +12,7 @@ import { ProductService } from './product/product.service';
 
 import { AdminController } from './admin/admin.controller';
 import { AdminService } from './admin/admin.service';
+import { ReduceController } from './admin/reduce.controller';
 
 @Global()
 @Module({
@@ -26,7 +27,7 @@ export class PrismaModule {}
     PassportModule.register({ defaultStrategy: 'jwt' }),
     PrismaModule,
   ],
-  controllers: [CategoryController, ProductController, AdminController],
-  providers: [JwtStrategy, CategoryService, ProductService, AdminService], // <-- Added the 3 new services here
+  controllers: [CategoryController, ProductController, AdminController, ReduceController],
+  providers: [JwtStrategy, CategoryService, ProductService, AdminService], 
 })
 export class AppModule {}
