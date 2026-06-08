@@ -46,9 +46,7 @@ Platform mendukung tiga peran pengguna:
 jomoro-koffee/
 ├── auth-service/          # NestJS project — Auth Service (Port 3001)
 ├── product-service/       # NestJS project — Product Service (Port 3002)
-├── transaction-service/   # NestJS project — Transaction Service (Port 3003)
-└── database/
-    └── jomoro_koffee.sql  # SQL file untuk inisialisasi database
+└── transaction-service/   # NestJS project — Transaction Service (Port 3003)
 ```
 
 ---
@@ -139,12 +137,11 @@ Pastikan software berikut sudah terinstal:
 
 1. Jalankan **XAMPP** dan aktifkan service **Apache** dan **MySQL**.
 2. Buka **phpMyAdmin** di `http://localhost/phpmyadmin`.
-3. Buat database baru bernama `jomoro_koffee`.
-4. Import file SQL:
-   - Pilih database `jomoro_koffee`
-   - Klik tab **Import**
-   - Upload file `database/jomoro_koffee.sql`
-   - Klik **Go**
+3. Buat 3 database baru untuk masing-masing service:
+   - `jomoro_koffee_auth` (untuk Auth Service)
+   - `jomoro_koffee_product` (untuk Product Service)
+   - `jomoro_koffee_transaction` (untuk Transaction Service)
+4. Tabel database akan secara otomatis di-generate menggunakan perintah `npx prisma db push` saat melakukan setup masing-masing service di langkah selanjutnya.
 
 ### 2. Konfigurasi `.env`
 
@@ -153,7 +150,7 @@ Buat file `.env` di masing-masing folder service berdasarkan `.env.example` yang
 **auth-service/.env**
 
 ```env
-DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee"
+DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee_auth"
 JWT_SECRET="jomoro_secret_key"
 PORT=3001
 ```
@@ -161,7 +158,7 @@ PORT=3001
 **product-service/.env**
 
 ```env
-DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee"
+DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee_product"
 JWT_SECRET="jomoro_secret_key"
 PORT=3002
 ```
@@ -169,13 +166,14 @@ PORT=3002
 **transaction-service/.env**
 
 ```env
-DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee"
+DATABASE_URL="mysql://root:@localhost:3306/jomoro_koffee_transaction"
 JWT_SECRET="jomoro_secret_key"
 PORT=3003
 PRODUCT_SERVICE_URL=http://localhost:3002
+AUTH_SERVICE_URL=http://localhost:3001
 ```
 
-> Sesuaikan `DATABASE_URL` jika MySQL kamu menggunakan password.
+> Sesuaikan `DATABASE_URL` jika MySQL kamu menggunakan port yang berbeda (misal `localhost:3308`) atau menggunakan password.
 
 ### 3. Setup Auth Service
 
@@ -183,6 +181,7 @@ PRODUCT_SERVICE_URL=http://localhost:3002
 cd auth-service
 npm install
 npx prisma generate
+npx prisma db push
 npx prisma db seed
 npm run start:dev
 ```
@@ -193,6 +192,7 @@ npm run start:dev
 cd product-service
 npm install
 npx prisma generate
+npx prisma db push
 npm run start:dev
 ```
 
@@ -202,6 +202,7 @@ npm run start:dev
 cd transaction-service
 npm install
 npx prisma generate
+npx prisma db push
 npm run start:dev
 ```
 
@@ -220,16 +221,16 @@ npm run start:dev
 
 ### 🛍️ Product Service (`localhost:3002`)
 
-| Method | Endpoint                           | Akses | Deskripsi                   |
-| ------ | ---------------------------------- | ----- | --------------------------- |
-| GET    | `/products`                        | Guest | Daftar semua produk         |
-| GET    | `/products/:id`                    | Guest | Detail produk               |
-| GET    | `/categories`                      | Guest | Daftar semua kategori       |
-| GET    | `/categories/:categoryId/products` | Guest | Produk berdasarkan kategori |
-| POST   | `/admin/products`                  | Admin | Tambah produk baru          |
-| POST   | `/admin/products/:id/update`       | Admin | Update produk               |
-| POST   | `/admin/products/:id/reduce`       | Admin | Kurangi stok produk         |
-| POST   | `/admin/products/:id/delete`       | Admin | Hapus produk                |
+| Method | Endpoint                           | Akses    | Deskripsi                   |
+| ------ | ---------------------------------- | -------- | --------------------------- |
+| GET    | `/products`                        | Guest    | Daftar semua produk         |
+| GET    | `/products/:id`                    | Guest    | Detail produk               |
+| GET    | `/categories`                      | Guest    | Daftar semua kategori       |
+| GET    | `/categories/:categoryId/products` | Guest    | Produk berdasarkan kategori |
+| POST   | `/admin/products`                  | Admin    | Tambah produk baru          |
+| POST   | `/admin/products/:id/update`       | Admin    | Update produk               |
+| POST   | `/admin/products/:id/reduce`       | Internal | Kurangi stok produk         |
+| POST   | `/admin/products/:id/delete`       | Admin    | Hapus produk                |
 
 ### 🛒 Transaction Service (`localhost:3003`)
 
@@ -312,7 +313,7 @@ Contoh: Transaction Service memanggil Product Service untuk mengambil detail pro
 | Lihat katalog produk |  ✅   |    ✅    |  ✅   |
 | Lihat kategori       |  ✅   |    ✅    |  ✅   |
 | Register & Login     |  ✅   |    ✅    |  ✅   |
-| Profil pengguna      |  ❌   |    ✅    |  ✅   |
+| Profil pengguna      |  ❌   |    ✅    |  ❌   |
 | Keranjang belanja    |  ❌   |    ✅    |  ❌   |
 | Riwayat order        |  ❌   |    ✅    |  ❌   |
 | Checkout             |  ❌   |    ✅    |  ❌   |
